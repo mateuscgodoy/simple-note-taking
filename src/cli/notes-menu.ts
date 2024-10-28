@@ -6,6 +6,7 @@ export enum OPS {
   READ_ONE,
   UPDATE,
   DELETE,
+  EXIT,
 }
 
 export type Choice = {
@@ -22,6 +23,7 @@ export default class NotesMenu {
     { name: 'Read one note', value: OPS[OPS.READ_ONE] },
     { name: 'Update a note', value: OPS[OPS.UPDATE] },
     { name: 'Delete a note', value: OPS[OPS.DELETE] },
+    { name: 'Exit', value: OPS[OPS.EXIT] },
   ];
 
   async render() {
