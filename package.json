@@ -1,0 +1,33 @@
+{
+  "name": "simple-note-taking",
+  "version": "1.0.0",
+  "description": "A simple note-taking app as a practice for NodeJS",
+  "main": "index.js",
+  "private": "true",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && node ./dist/index.js",
+    "dev": "tsx --watch ./src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mateuscgodoy/simple-note-taking.git"
+  },
+  "keywords": [
+    "NodeJS",
+    "TypeScript",
+    "Note-taking"
+  ],
+  "author": "Mateus Colombo Godoy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mateuscgodoy/simple-note-taking/issues"
+  },
+  "homepage": "https://github.com/mateuscgodoy/simple-note-taking#readme",
+  "devDependencies": {
+    "@types/node": "^22.8.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
