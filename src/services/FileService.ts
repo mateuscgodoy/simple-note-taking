@@ -1,7 +1,6 @@
 import * as fs from 'node:fs/promises';
 import { existsSync, mkdirSync, writeFileSync, statSync } from 'node:fs';
 import path from 'node:path';
-import filenamify from 'filenamify';
 
 import FileServiceError from '../models/FileServiceError.js';
 
@@ -9,66 +8,91 @@ import FileServiceError from '../models/FileServiceError.js';
  * Responsible for File System access and operations
  */
 export default class FileService {
-  private notesDirPath: string;
-  private controlFilePath: string;
+  /**
+   * Create Notes directory and control file for NoteService internal operations
+   * @param notesDirPath {string} Path to the directory that stores Notes
+   * @param controlFilePath {string} Path to the control file for Notes
+   */
+  setControlFiles(notesDirPath: string, controlFilePath: string) {
+    this.validateFilePath(notesDirPath);
+    this.validateFilePath(controlFilePath);
 
-  constructor() {
-    this.notesDirPath = path.resolve(process.cwd(), 'notes');
-    this.controlFilePath = path.join(this.notesDirPath, '__control-notes.txt');
-    this.init();
+    if (!existsSync(notesDirPath)) {
+      mkdirSync(notesDirPath);
+    }
+    if (!this.fileExists(controlFilePath)) {
+      writeFileSync(controlFilePath, '');
+    }
   }
 
-  private init() {
-    if (!existsSync(this.notesDirPath)) {
-      mkdirSync(this.notesDirPath);
-    }
-    if (!FileService.fileExists(this.controlFilePath)) {
-      writeFileSync(this.controlFilePath, '');
-    }
-  }
-
-  async createFile(filename: string, data: string) {
-    const safeName = this.generateFilePath(filename);
+  /**
+   * Creates a new file and add some content to it
+   * @param filePath {string}
+   * @param data {string} The new files content
+   */
+  async createFile(filePath: string, data: string = '') {
     try {
-      await fs.writeFile(safeName, data, { flag: 'wx' });
+      this.validateFilePath(filePath);
+      await fs.writeFile(filePath, data, { flag: 'wx' });
     } catch (error) {
-      throw new FileServiceError('Error: file creation failed', 'CREATE_FILE');
+      if (!(error instanceof FileServiceError)) {
+        throw new FileServiceError(
+          'Error: file creation failed',
+          'CREATE_FILE',
+          filePath
+        );
+      }
     }
   }
 
-  async readFile(filename: string): Promise<string> {
-    const filePath = this.generateFilePath(filename);
+  /**
+   * Read a file asynchronously and returns its content
+   * @param filePath {string} A valid file path
+   * @returns {string} The contents from the file
+   */
+  async readFile(filePath: string): Promise<string> {
+    this.validateFilePath(filePath);
 
-    const fileExists = FileService.fileExists(filePath);
-    if (!fileExists) {
+    if (!this.fileExists(filePath)) {
       throw new FileServiceError(
         'Error: the file asked does not exist',
-        'READ_FILE'
+        'READ_FILE',
+        filePath
       );
     }
     const data = await fs.readFile(filePath);
     return data.toString();
   }
 
-  async writeToFile(filename: string, data: string) {
-    const filePath = this.generateFilePath(filename);
+  /**
+   * Asynchronously write to a specified file path
+   * @param filePath {string} A valid file path
+   * @param data The content to write on the file
+   */
+  async writeToFile(filePath: string, data: string) {
     try {
+      this.validateFilePath(filePath);
       await fs.writeFile(filePath, data);
     } catch (error) {
-      throw new FileServiceError(
-        'Error: failed to write the file',
-        'WRITE_FILE'
-      );
+      if (!(error instanceof FileServiceError)) {
+        throw new FileServiceError(
+          'Error: failed to write the file',
+          'WRITE_FILE',
+          filePath
+        );
+      }
+      throw error;
     }
   }
 
-  static generateFilename(displayName: string) {
-    return filenamify(displayName);
-  }
-
-  static fileExists(filename: URL | string): boolean {
+  /**
+   * Utility function that verify if a file exists or not
+   * @param filePath {string} A valid file path
+   * @returns {boolean} Whether or not the file exists
+   */
+  fileExists(filePath: string): boolean {
     try {
-      statSync(filename);
+      statSync(filePath);
       return true;
     } catch (error: any) {
       const { code } = error;
@@ -79,9 +103,20 @@ export default class FileService {
     }
   }
 
-  private generateFilePath(filename: string): string {
-    return path.isAbsolute(filename)
-      ? filename
-      : path.join(this.notesDirPath, FileService.generateFilename(filename));
+  /**
+   * Checks if a file path is valid throwing an error if it is not
+   * @param filePath A valid file path
+   * @returns {boolean} True when the file path is valid
+   * @throws {FileServiceError} When the path is invalid
+   */
+  private validateFilePath(filePath: string): boolean {
+    if (!path.isAbsolute(filePath)) {
+      throw new FileServiceError(
+        'Error: file path provided is invalid',
+        'INVALID_PATH',
+        filePath
+      );
+    }
+    return true;
   }
 }
