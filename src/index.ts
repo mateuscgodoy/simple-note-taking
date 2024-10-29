@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 
-import notesCLI from './cli/index.js';
-
 main();
 
 function main() {
-  notesCLI();
+  // TODO check if the "notes" directory exists, creating if it does not
 }
