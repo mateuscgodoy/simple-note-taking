@@ -1,9 +1,14 @@
 import path from 'node:path';
 import filenamify from 'filenamify';
+import slugify from 'slugify';
 
 import Note from '../models/Note.js';
 import FileService from './FileService.js';
-import { OPS } from '../models/OPS.js';
+
+export type OperationResult = {
+  succeed: boolean;
+  message?: string;
+};
 
 /**
  * Encapsulates CRUD operations on Notes
@@ -12,53 +17,50 @@ export default class NoteService {
   private fileService: FileService;
   private notesDirPath: string;
   private controlFilePath: string;
-  private _operations: Map<OPS, any> = new Map();
 
   constructor(fileService: FileService) {
     this.notesDirPath = path.resolve(process.cwd(), 'notes');
     this.controlFilePath = path.join(this.notesDirPath, '__control-notes.txt');
     this.fileService = fileService;
     this.fileService.setControlFiles(this.notesDirPath, this.controlFilePath);
-    this._operations.set(OPS.CREATE, this.createNote.bind(this));
-    this._operations.set(OPS.LIST_ALL, this.listAllNotes.bind(this));
-    this._operations.set(OPS.READ_ONE, this.readNote.bind(this));
-    this._operations.set(OPS.UPDATE, this.updateNote.bind(this));
-    this._operations.set(OPS.DELETE, this.deleteNote.bind(this));
   }
 
-  get operations() {
-    return this._operations;
-  }
-
-  private async logFileNames(displayName: string): Promise<string> {
-    const filename = this.generateFilename(displayName);
-    await this.fileService.appendToFile(
-      this.controlFilePath,
-      `display=${displayName},filename=${filename}\n`
-    );
-    return filename;
-  }
-
-  private async createNote(
+  async createNote(
     displayTitle: string,
     content: string
-  ): Promise<void> {
-    // Probably validation here
+  ): Promise<OperationResult> {
     const filename = await this.logFileNames(displayTitle);
     const filePath = this.generateFilePath(filename);
     const noteText = `${displayTitle}\n\n${content}`;
-    await this.fileService.writeToFile(filePath, noteText);
+    try {
+      await this.fileService.writeToFile(filePath, noteText);
+      return { succeed: true, message: 'New note created with success! ✅' };
+    } catch (error) {
+      const output = {
+        succeed: false,
+        message: 'An error occurred while trying to create the note',
+      };
+      if (error instanceof Error) {
+        output.message = error.message;
+      }
+      return output;
+    }
   }
 
-  private listAllNotes(): Note[] | undefined {
-    // TODO read all
-    return undefined;
-    throw new Error('Not implemented');
+  private async listAllNotes(): Promise<string[]> {
+    const data = await this.fileService.readFile(this.controlFilePath);
+    const displayTitles = data
+      .split('\n')
+      .filter((line) => line)
+      .map((line) => line.split(',').map((pair) => pair.split('=')[1])[0]);
+
+    return displayTitles;
   }
 
-  private readNote(displayTitle: string): Note | undefined {
-    // TODO read a note
-    throw new Error('Not implemented');
+  private async readNote(displayTitle: string): Promise<string | undefined> {
+    const filePath = this.generateFilePath(this.generateFilename(displayTitle));
+    const data = await this.fileService.readFile(filePath);
+    return data;
   }
 
   private updateNote(displayTitle: string, updatedNote: Note): void {
@@ -76,6 +78,15 @@ export default class NoteService {
   }
 
   private generateFilename(displayName: string) {
-    return filenamify(displayName) + '.txt';
+    return slugify.default(filenamify(displayName), { lower: true }) + '.txt';
+  }
+
+  private async logFileNames(displayName: string): Promise<string> {
+    const filename = this.generateFilename(displayName);
+    await this.fileService.appendToFile(
+      this.controlFilePath,
+      `display=${displayName},filename=${filename}\n`
+    );
+    return filename;
   }
 }
