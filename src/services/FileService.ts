@@ -65,7 +65,7 @@ export default class FileService {
   }
 
   /**
-   * Asynchronously write to a specified file path
+   * Asynchronously write to a specified file path overwriting any contents
    * @param filePath {string} A valid file path
    * @param data The content to write on the file
    */
@@ -82,6 +82,26 @@ export default class FileService {
         );
       }
       throw error;
+    }
+  }
+
+  /**
+   * Asynchronously append content to a file, creating it if it does not exist
+   * @param filePath A valid file path
+   * @param data The content to append to a file
+   */
+  async appendToFile(filePath: string, data: string) {
+    try {
+      this.validateFilePath(filePath);
+      await fs.appendFile(filePath, data);
+    } catch (error) {
+      if (!(error instanceof FileServiceError)) {
+        throw new FileServiceError(
+          'Error: failed while appending to file',
+          'APPEND_FILE',
+          filePath
+        );
+      }
     }
   }
 
