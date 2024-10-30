@@ -63,4 +63,38 @@ export default class PromptHandler {
     });
     return answer;
   }
+
+  async getParametersForOperation(op: OPS): Promise<any[]> {
+    switch (op) {
+      case OPS.CREATE:
+        const title = await this.getInput('Enter the title: ');
+        const content = await this.getInput('Enter the content: ');
+        return [title, content];
+
+      case OPS.READ_ONE:
+        const readTitle = await this.getInput(
+          'Enter the title of the note to read: '
+        );
+        return [readTitle];
+
+      case OPS.UPDATE:
+        const updateTitle = await this.getInput(
+          'Enter the title of the note to update: '
+        );
+        const updatedContent = await this.getInput('Enter the new content: ');
+        return [updateTitle, updatedContent];
+
+      case OPS.DELETE:
+        const deleteTitle = await this.getInput(
+          'Enter the title of the note to delete: '
+        );
+        return [deleteTitle];
+
+      case OPS.LIST_ALL:
+        return []; // No parameters needed
+
+      default:
+        throw new Error('Unsupported operation');
+    }
+  }
 }
