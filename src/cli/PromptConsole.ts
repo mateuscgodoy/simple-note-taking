@@ -7,7 +7,7 @@ import { OPS } from '../models/OPS.js';
  * Responsible for displaying information on the console
  * and collecting user inputs
  */
-export default class PromptHandler {
+export default class PromptConsole {
   async renderMenu(): Promise<OPS> {
     const choices = [
       {
@@ -39,7 +39,7 @@ export default class PromptHandler {
   }
 
   async getInput<T>(prompt: string): Promise<T> {
-    const answer = await input({ message: prompt });
+    const answer = await input({ required: true, message: prompt });
     return answer as T;
   }
 
@@ -48,16 +48,19 @@ export default class PromptHandler {
     console.log(`${note.content ? note.content : ''}`);
   }
 
-  async renderNotesTitles(notes: Note[]): Promise<Note | undefined> {
-    if (!notes.length) {
+  async renderNotesTitles(displayTitles: string[]): Promise<string | void> {
+    if (!displayTitles.length) {
       console.log('There are no notes yet. Try adding some! ⭐');
       return;
     }
 
     console.clear();
     console.log('📝 NOTES TITLES 📝');
-    const choices = notes.map((note) => ({ value: note, name: note.title }));
-    const answer: Note = await select({
+    const choices = displayTitles.map((title) => ({
+      value: title,
+      name: title,
+    }));
+    const answer: string = await select({
       message: 'Choose which note you would like to see',
       choices,
     });
@@ -96,5 +99,22 @@ export default class PromptHandler {
       default:
         throw new Error('Unsupported operation');
     }
+  }
+
+  printWelcomeMessage() {
+    console.clear();
+    console.log('========== ⭐ WELCOME ⭐ ==========');
+    console.log(
+      '📌 This is a simple Note-taking App, that allows you to create files with your notes!'
+    );
+    console.log('👤 Created by: Mateus Colombo Godoy.');
+    console.log('Lets get started!');
+    console.log('===================================');
+  }
+
+  printGoodByeMessage() {
+    console.clear();
+    console.log('Thank you for using the app!');
+    console.log('Have a wonderful day 👋😎');
   }
 }
