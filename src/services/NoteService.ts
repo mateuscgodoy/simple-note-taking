@@ -30,7 +30,14 @@ export default class NoteService {
     displayTitle: string,
     content: string
   ): Promise<OperationResult> {
-    const filename = await this.logFileNames(displayTitle);
+    const isUnique = await this.isUniqueTitle(displayTitle);
+    if (!isUnique) {
+      return {
+        succeed: false,
+        message: 'There is already a note with the intended title',
+      };
+    }
+    const filename = await this.createNoteLog(displayTitle);
     const filePath = this.generateFilePath(filename);
     const noteText = `${displayTitle}\n\n${content}`;
     try {
@@ -76,14 +83,55 @@ export default class NoteService {
     }
   }
 
-  private updateNote(displayTitle: string, updatedNote: Note): void {
-    // TODO update note
-    throw new Error('Not implemented');
+  async updateNote(
+    displayTitle: string,
+    updatedNote: Note
+  ): Promise<OperationResult> {
+    try {
+      let filename: string = this.generateFilename(displayTitle);
+      if (displayTitle !== updatedNote.title) {
+        await this.deleteNoteLog(displayTitle);
+        filename = await this.createNoteLog(updatedNote.title);
+      }
+      const noteText = `${updatedNote.title}\n\n${updatedNote.content || ''}`;
+
+      await this.fileService.writeToFile(
+        this.generateFilePath(filename),
+        noteText
+      );
+      return { succeed: true, message: 'Note updated with success! ✅' };
+    } catch (error) {
+      const output = {
+        succeed: false,
+        message: 'An error occurred while trying to reading the note',
+        data: undefined,
+      };
+      if (error instanceof Error) {
+        output.message = error.message;
+      }
+      return output;
+    }
   }
 
-  private deleteNote(displayTitle: string) {
-    // TODO delete note
-    throw new Error('Not implemented');
+  async deleteNote(displayTitle: string): Promise<OperationResult> {
+    try {
+      await this.deleteNoteLog(displayTitle);
+      const filePath = this.generateFilePath(
+        this.generateFilename(displayTitle)
+      );
+      await this.fileService.deleteFile(filePath);
+      return { succeed: true, message: 'Note deleted with success' };
+    } catch (error) {
+      const output = {
+        succeed: false,
+        message: 'An error occurred while trying to delete the note',
+        data: undefined,
+      };
+      if (error instanceof Error) {
+        output.message = error.message;
+      }
+      return output;
+    }
   }
 
   private generateFilePath(filename: string): string {
@@ -94,12 +142,29 @@ export default class NoteService {
     return slugify.default(filenamify(displayName), { lower: true }) + '.txt';
   }
 
-  private async logFileNames(displayName: string): Promise<string> {
+  private async createNoteLog(displayName: string): Promise<string> {
     const filename = this.generateFilename(displayName);
     await this.fileService.appendToFile(
       this.controlFilePath,
       `display=${displayName},filename=${filename}\n`
     );
     return filename;
+  }
+
+  private async deleteNoteLog(displayTitle: string) {
+    const displayTag = `display=${displayTitle}`;
+    const noteLogs = await this.fileService.readFile(this.controlFilePath);
+    const updatedLogs = noteLogs
+      .split('\n')
+      .filter((log) => !log.includes(displayTag))
+      .join('\n');
+    await this.fileService.writeToFile(this.controlFilePath, updatedLogs);
+  }
+
+  private async isUniqueTitle(displayTitle: string): Promise<boolean> {
+    const titles = await this.listAllNotes();
+    return !titles.some(
+      (title) => title.toLowerCase() === displayTitle.toLowerCase()
+    );
   }
 }
