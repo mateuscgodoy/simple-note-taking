@@ -1,7 +1,6 @@
 export enum OPS {
   CREATE,
-  LIST_ALL,
-  READ_ONE,
+  READ,
   UPDATE,
   DELETE,
   EXIT,

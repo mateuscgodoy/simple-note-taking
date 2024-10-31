@@ -9,9 +9,7 @@ export default class ExitCommand implements ICommand {
     return this._operation;
   }
 
-  execute(
-    noteService: NoteService
-  ): OperationResult | Promise<OperationResult> {
+  execute(): OperationResult | Promise<OperationResult> {
     return { succeed: true };
   }
 }
