@@ -8,6 +8,7 @@ import FileService from './FileService.js';
 export type OperationResult = {
   succeed: boolean;
   message?: string;
+  data?: string | undefined;
 };
 
 /**
@@ -47,7 +48,7 @@ export default class NoteService {
     }
   }
 
-  private async listAllNotes(): Promise<string[]> {
+  async listAllNotes(): Promise<string[]> {
     const data = await this.fileService.readFile(this.controlFilePath);
     const displayTitles = data
       .split('\n')
@@ -57,10 +58,22 @@ export default class NoteService {
     return displayTitles;
   }
 
-  private async readNote(displayTitle: string): Promise<string | undefined> {
+  async readNote(displayTitle: string): Promise<OperationResult> {
     const filePath = this.generateFilePath(this.generateFilename(displayTitle));
-    const data = await this.fileService.readFile(filePath);
-    return data;
+    try {
+      const data = await this.fileService.readFile(filePath);
+      return { succeed: true, data };
+    } catch (error) {
+      const output = {
+        succeed: false,
+        message: 'An error occurred while trying to reading the note',
+        data: undefined,
+      };
+      if (error instanceof Error) {
+        output.message = error.message;
+      }
+      return output;
+    }
   }
 
   private updateNote(displayTitle: string, updatedNote: Note): void {
