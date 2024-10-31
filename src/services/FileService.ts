@@ -106,6 +106,25 @@ export default class FileService {
   }
 
   /**
+   * Calls unlink function File System module on a given file
+   * @param filePath A valid file path
+   */
+  async deleteFile(filePath: string) {
+    try {
+      this.validateFilePath(filePath);
+      await fs.unlink(filePath);
+    } catch (error) {
+      if (!(error instanceof FileServiceError)) {
+        throw new FileServiceError(
+          'Error: failed to delete the file',
+          'DELETE_FILE',
+          filePath
+        );
+      }
+    }
+  }
+
+  /**
    * Utility function that verify if a file exists or not
    * @param filePath {string} A valid file path
    * @returns {boolean} Whether or not the file exists
