@@ -36,11 +36,12 @@ export default class MessageLogger {
       console.error(
         opResult.message || 'Operation Aborted: Something when wrong'
       );
-    }
-    if (opResult.data) {
-      console.log(opResult.data);
-    } else if (opResult.message) {
-      console.log(opResult.message);
+    } else {
+      if (opResult.data) {
+        console.log(opResult.data);
+      } else if (opResult.message) {
+        console.log(opResult.message);
+      }
     }
     console.log('\n');
   }

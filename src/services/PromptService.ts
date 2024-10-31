@@ -4,19 +4,21 @@ import validateStringLength from '../utils/validateStringInput.js';
 import { OPS } from '../models/OPS.js';
 
 export default class PromptService {
-  async getTitle(): Promise<string> {
+  async getTitle(placeholder?: string): Promise<string> {
     return await input({
       message: 'Enter the title of your note:',
       required: true,
       validate: (value) => validateStringLength(value),
+      default: placeholder ? placeholder : '',
     });
   }
 
-  async getContent(): Promise<string> {
+  async getContent(placeholder?: string): Promise<string> {
     return await input({
       message: 'Enter the content of your note (max. 500 characters):',
       required: true,
       validate: (value) => validateStringLength(value, 500),
+      default: placeholder ? placeholder : '',
     });
   }
 
